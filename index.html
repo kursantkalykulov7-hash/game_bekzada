@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Игра: Творительный падеж (С кем?)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+        body { font-family: 'Nunito', sans-serif; user-select: none; }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between">
+
+    <!-- Header -->
+    <header class="bg-slate-800 border-b border-slate-700 px-4 py-3 sticky top-0 z-30 shadow-md">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <h1 class="text-xl sm:text-2xl font-black text-amber-400 flex items-center gap-2">
+                👥 Творительный падеж: С кем?
+            </h1>
+            <button onclick="restartGame()" class="bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/30 px-3 py-1.5 rounded-xl text-sm font-bold transition-all">
+                <i class="fa-solid fa-rotate-right"></i> Настройка
+            </button>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto w-full p-4 sm:p-6 flex-grow flex flex-col justify-center">
+
+        <!-- SETUP SCREEN -->
+        <section id="setup-screen" class="max-w-md mx-auto w-full bg-slate-800 border border-slate-700 p-6 rounded-3xl shadow-2xl">
+            <h2 class="text-2xl font-black text-center text-white mb-4">Битва 3-х Команд</h2>
+            <form onsubmit="startGame(event)" class="space-y-4">
+                <div>
+                    <label class="text-sm font-bold text-indigo-400">Команда 1</label>
+                    <input type="text" id="t1-input" value="Знатоки" required class="w-full bg-slate-900 text-white font-bold px-4 py-2.5 rounded-xl border border-slate-700 focus:outline-none focus:border-indigo-500">
+                </div>
+                <div>
+                    <label class="text-sm font-bold text-emerald-400">Команда 2</label>
+                    <input type="text" id="t2-input" value="Умники" required class="w-full bg-slate-900 text-white font-bold px-4 py-2.5 rounded-xl border border-slate-700 focus:outline-none focus:border-emerald-500">
+                </div>
+                <div>
+                    <label class="text-sm font-bold text-amber-400">Команда 3</label>
+                    <input type="text" id="t3-input" value="Грамотеи" required class="w-full bg-slate-900 text-white font-bold px-4 py-2.5 rounded-xl border border-slate-700 focus:outline-none focus:border-amber-500">
+                </div>
+                <button type="submit" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white text-lg font-black rounded-xl shadow-lg transition-all">
+                    Начать игру
+                </button>
+            </form>
+        </section>
+
+        <!-- GAME BOARD SCREEN -->
+        <section id="board-screen" class="hidden flex flex-col gap-6">
+
+            <!-- Scoreboard -->
+            <div class="grid grid-cols-3 gap-3">
+                <div id="card-t-0" class="bg-slate-800 border-2 border-indigo-500/50 p-3 rounded-2xl text-center relative transition-all duration-300">
+                    <span id="badge-0" class="hidden absolute -top-2.5 left-1/2 -translate-x-1/2 bg-indigo-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full uppercase">Ходит</span>
+                    <div id="name-0" class="font-black text-sm text-indigo-300 truncate">Знатоки</div>
+                    <div id="score-0" class="text-2xl sm:text-3xl font-black text-white">0</div>
+                </div>
+                <div id="card-t-1" class="bg-slate-800 border-2 border-emerald-500/50 p-3 rounded-2xl text-center relative transition-all duration-300">
+                    <span id="badge-1" class="hidden absolute -top-2.5 left-1/2 -translate-x-1/2 bg-emerald-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full uppercase">Ходит</span>
+                    <div id="name-1" class="font-black text-sm text-emerald-300 truncate">Умники</div>
+                    <div id="score-1" class="text-2xl sm:text-3xl font-black text-white">0</div>
+                </div>
+                <div id="card-t-2" class="bg-slate-800 border-2 border-amber-500/50 p-3 rounded-2xl text-center relative transition-all duration-300">
+                    <span id="badge-2" class="hidden absolute -top-2.5 left-1/2 -translate-x-1/2 bg-amber-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full uppercase">Ходит</span>
+                    <div id="name-2" class="font-black text-sm text-amber-300 truncate">Грамотеи</div>
+                    <div id="score-2" class="text-2xl sm:text-3xl font-black text-white">0</div>
+                </div>
+            </div>
+
+            <!-- Current Turn Info -->
+            <div class="bg-slate-800 p-3.5 rounded-xl border border-slate-700 flex justify-between items-center text-sm">
+                <div>Очередь выбирать: <span id="current-team-turn" class="font-black text-amber-400">Знатоки</span></div>
+                <div class="text-slate-400">Осталось вопросов: <span id="rem-q" class="text-white font-bold">22</span></div>
+            </div>
+
+            <!-- Grid by Sections -->
+            <div id="sections-container" class="space-y-6"></div>
+        </section>
+
+        <!-- QUESTION MODAL -->
+        <div id="q-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+            <div class="bg-slate-800 border border-slate-700 max-w-lg w-full rounded-3xl p-6 shadow-2xl">
+                <div class="flex justify-between items-center mb-4">
+                    <span id="m-pts" class="px-3 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-lg text-xs font-black"></span>
+                    <span class="text-sm font-bold text-slate-300">Отвечает: <span id="m-team" class="font-black text-indigo-400"></span></span>
+                </div>
+
+                <div class="bg-slate-900 p-5 rounded-2xl text-center mb-5 border border-slate-700">
+                    <p class="text-xs text-slate-400 mb-2 font-bold uppercase">Раскройте скобки (С кем?):</p>
+                    <div id="m-sentence" class="text-xl font-black text-white"></div>
+                </div>
+
+                <div id="m-options" class="grid grid-cols-1 gap-2.5 mb-4"></div>
+
+                <div id="m-feedback" class="hidden p-3 rounded-xl text-center font-bold text-sm mb-4"></div>
+
+                <button id="m-next" onclick="closeModal()" class="hidden w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold rounded-xl shadow-lg">
+                    Продолжить
+                </button>
+            </div>
+        </div>
+
+        <!-- END GAME SCREEN -->
+        <section id="end-screen" class="hidden max-w-lg mx-auto w-full bg-slate-800 border border-slate-700 p-8 rounded-3xl shadow-2xl text-center">
+            <div class="text-5xl mb-2">🏆</div>
+            <h2 class="text-3xl font-black text-white mb-2">Игра завершена!</h2>
+            <p class="text-slate-400 text-sm mb-6">Итоговые баллы команд:</p>
+
+            <div id="results-table" class="space-y-3 mb-8"></div>
+
+            <button onclick="restartGame()" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-black rounded-xl shadow-lg">
+                Сиграть снова
+            </button>
+        </section>
+
+    </main>
+
+    <script>
+        const gameData = [
+            {
+                pts: 100,
+                title: "🟢 Раздел 100 баллов (7 вопросов)",
+                questions: [
+                    { q: "Я иду в кино (друг).", ans: "с другом", opts: ["с другом", "с друге", "с друга", "с другу"] },
+                    { q: "Мама разговаривает (подруга).", ans: "с подругой", opts: ["с подругой", "с подругу", "с подруге", "с подруги"] },
+                    { q: "Брат играет в футбол (сосед).", ans: "с соседом", opts: ["с соседом", "с соседе", "с соседа", "с соседу"] },
+                    { q: "Дедушка сидит на скамейке (бабушка).", ans: "с бабушкой", opts: ["с бабушкой", "с бабушку", "с бабушке", "с бабушки"] },
+                    { q: "Анна гуляет (сестра).", ans: "с сестрой", opts: ["с сестрой", "с сестру", "с сестре", "с сестры"] },
+                    { q: "Мальчик бегает (собака).", ans: "с собакой", opts: ["с собакой", "с собаку", "с собаке", "с собаки"] },
+                    { q: "Отец пошел на рыбалку (сын).", ans: "с сыном", opts: ["с сыном", "с сыне", "с сына", "с сыну"] }
+                ]
+            },
+            {
+                pts: 200,
+                title: "🟡 Раздел 200 баллов (7 вопросов)",
+                questions: [
+                    { q: "Пациент консультируется (врач).", ans: "с врачом", opts: ["с врачом", "с врачем", "с врача", "с враче"] },
+                    { q: "Мы долго общались (гость).", ans: "с гостем", opts: ["с гостем", "с гостьом", "с гостя", "с госте"] },
+                    { q: "Учитель занимается (ученица).", ans: "с ученицей", opts: ["с ученицей", "с ученицой", "с ученицу", "с ученице"] },
+                    { q: "Малыш играет (кошка).", ans: "с кошкой", opts: ["с кошкой", "с кошку", "с кошке", "с кошки"] },
+                    { q: "Турист разговаривает (гид).", ans: "с гидом", opts: ["с гидом", "с гиде", "с гида", "с гиду"] },
+                    { q: "Спортсмен занимается (тренер).", ans: "с тренером", opts: ["с тренером", "с тренере", "с тренера", "с тренеру"] },
+                    { q: "Девочка поет песню (мать).", ans: "с матерью", opts: ["с матерью", "с мамой", "с матери", "с матерей"] }
+                ]
+            },
+            {
+                pts: 300,
+                title: "🔴 Раздел 300 баллов (8 вопросов)",
+                questions: [
+                    { q: "Ты пойдешь в парк вместе (я)?", ans: "со мной", opts: ["со мной", "с мной", "со меня", "с мне"] },
+                    { q: "Максим пошел на концерт (она).", ans: "с ней", opts: ["с ней", "с ей", "с нее", "с нею"] },
+                    { q: "Хочешь поехать на дачу (мы)?", ans: "с нами", opts: ["с нами", "с нас", "с нам", "с мы"] },
+                    { q: "Учитель идет в музей (дети).", ans: "с детьми", opts: ["с детьми", "с детями", "с детей", "с детях"] },
+                    { q: "Мы встретились в кафе (друзья).", ans: "с друзьями", opts: ["с друзьями", "с друзьми", "с друзей", "с друзьям"] },
+                    { q: "Девочка играла во дворе (щенок).", ans: "со щенком", opts: ["со щенком", "с щенком", "со щенка", "со щенку"] },
+                    { q: "Директор разговаривал (они).", ans: "с ними", opts: ["с ними", "с ими", "с них", "с им"] },
+                    { q: "Отец занимается (родители).", ans: "с родителями", opts: ["с родителями", "с родителей", "с родителям", "с родителя"] }
+                ]
+            }
+        ];
+
+        let teams = [];
+        let currentTurn = 0;
+        let playedCards = {};
+        let activeQ = null;
+        let totalQ = 22;
+        let answeredQ = 0;
+
+        function startGame(e) {
+            if (e) e.preventDefault();
+            teams = [
+                { name: document.getElementById('t1-input').value || "Знатоки", score: 0, color: 'indigo' },
+                { name: document.getElementById('t2-input').value || "Умники", score: 0, color: 'emerald' },
+                { name: document.getElementById('t3-input').value || "Грамотеи", score: 0, color: 'amber' }
+            ];
+            currentTurn = 0;
+            playedCards = {};
+            answeredQ = 0;
+
+            document.getElementById('setup-screen').classList.add('hidden');
+            document.getElementById('end-screen').classList.add('hidden');
+            document.getElementById('board-screen').classList.remove('hidden');
+
+            updateUI();
+            renderGrid();
+        }
+
+        function updateUI() {
+            teams.forEach((t, i) => {
+                document.getElementById(`name-${i}`).innerText = t.name;
+                document.getElementById(`score-${i}`).innerText = t.score;
+                
+                const card = document.getElementById(`card-t-${i}`);
+                const badge = document.getElementById(`badge-${i}`);
+                if (i === currentTurn) {
+                    card.classList.add('border-opacity-100', 'scale-105', 'bg-slate-700/80');
+                    badge.classList.remove('hidden');
+                } else {
+                    card.classList.remove('border-opacity-100', 'scale-105', 'bg-slate-700/80');
+                    badge.classList.add('hidden');
+                }
+            });
+
+            document.getElementById('current-team-turn').innerText = teams[currentTurn].name;
+            document.getElementById('rem-q').innerText = totalQ - answeredQ;
+        }
+
+        function renderGrid() {
+            const container = document.getElementById('sections-container');
+            container.innerHTML = '';
+
+            gameData.forEach((sec, sIdx) => {
+                const secDiv = document.createElement('div');
+                secDiv.className = "bg-slate-800/60 border border-slate-700 p-4 rounded-2xl";
+                
+                secDiv.innerHTML = `<h3 class="text-sm font-black text-slate-300 uppercase tracking-wider mb-3">${sec.title}</h3>`;
+                
+                const grid = document.createElement('div');
+                grid.className = "grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2";
+
+                sec.questions.forEach((q, qIdx) => {
+                    const key = `${sIdx}-${qIdx}`;
+                    const isPlayed = playedCards[key];
+                    const btn = document.createElement('button');
+
+                    if (isPlayed) {
+                        btn.className = "p-3 bg-slate-900 border border-slate-800 text-slate-600 rounded-xl font-bold text-xs cursor-not-allowed";
+                        btn.innerText = "✓ " + sec.pts;
+                        btn.disabled = true;
+                    } else {
+                        btn.className = "p-3 bg-slate-700 hover:bg-slate-600 border border-slate-600 hover:border-amber-400 text-amber-300 rounded-xl font-black text-lg transition-all active:scale-95 shadow-md";
+                        btn.innerText = sec.pts;
+                        btn.onclick = () => openModal(sIdx, qIdx);
+                    }
+                    grid.appendChild(btn);
+                });
+
+                secDiv.appendChild(grid);
+                container.appendChild(secDiv);
+            });
+        }
+
+        function openModal(sIdx, qIdx) {
+            const sec = gameData[sIdx];
+            const q = sec.questions[qIdx];
+            activeQ = { sIdx, qIdx, pts: sec.pts, ...q };
+
+            document.getElementById('m-pts').innerText = `${sec.pts} баллов`;
+            document.getElementById('m-team').innerText = teams[currentTurn].name;
+            document.getElementById('m-sentence').innerHTML = q.q.replace(/\(([^)]+)\)/, '<span class="text-amber-300 underline font-black">($1)</span>');
+
+            const optsDiv = document.getElementById('m-options');
+            optsDiv.innerHTML = '';
+
+            const shuffled = [...q.opts].sort(() => Math.random() - 0.5);
+            shuffled.forEach(opt => {
+                const b = document.createElement('button');
+                b.className = "p-3 bg-slate-700 hover:bg-slate-600 border border-slate-600 rounded-xl font-bold text-white text-left transition-all";
+                b.innerText = opt;
+                b.onclick = () => checkAns(opt, b);
+                optsDiv.appendChild(b);
+            });
+
+            document.getElementById('m-feedback').className = "hidden p-3 rounded-xl text-center font-bold text-sm mb-4";
+            document.getElementById('m-next').classList.add('hidden');
+            document.getElementById('q-modal').classList.remove('hidden');
+        }
+
+        function checkAns(selected, btn) {
+            const optsDiv = document.getElementById('m-options');
+            const btns = optsDiv.getElementsByTagName('button');
+            for (let b of btns) b.disabled = true;
+
+            const fb = document.getElementById('m-feedback');
+            const key = `${activeQ.sIdx}-${activeQ.qIdx}`;
+
+            if (selected === activeQ.ans) {
+                btn.classList.add('bg-emerald-600', 'border-emerald-400');
+                fb.className = "p-3 rounded-xl text-center font-bold text-sm mb-4 bg-emerald-950 text-emerald-300 border border-emerald-500";
+                fb.innerText = `Правильно! +${activeQ.pts} баллов`;
+                teams[currentTurn].score += activeQ.pts;
+            } else {
+                btn.classList.add('bg-rose-600', 'border-rose-400');
+                fb.className = "p-3 rounded-xl text-center font-bold text-sm mb-4 bg-rose-950 text-rose-300 border border-rose-500";
+                fb.innerText = `Неверно! Правильный ответ: ${activeQ.ans}`;
+            }
+
+            playedCards[key] = true;
+            answeredQ++;
+            fb.classList.remove('hidden');
+            document.getElementById('m-next').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('q-modal').classList.add('hidden');
+            currentTurn = (currentTurn + 1) % 3;
+            updateUI();
+            renderGrid();
+
+            if (answeredQ >= totalQ) {
+                showEndScreen();
+            }
+        }
+
+        function showEndScreen() {
+            document.getElementById('board-screen').classList.add('hidden');
+            document.getElementById('end-screen').classList.remove('hidden');
+
+            const table = document.getElementById('results-table');
+            table.innerHTML = '';
+
+            const sorted = [...teams].sort((a, b) => b.score - a.score);
+
+            sorted.forEach((t, idx) => {
+                const row = document.createElement('div');
+                row.className = "flex justify-between items-center p-4 bg-slate-900 border border-slate-700 rounded-xl";
+                row.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <span class="text-xl font-black ${idx === 0 ? 'text-amber-400' : 'text-slate-400'}">#${idx + 1}</span>
+                        <span class="font-bold text-white">${t.name}</span>
+                    </div>
+                    <span class="text-xl font-black text-amber-300">${t.score} баллов</span>
+                `;
+                table.appendChild(row);
+            });
+        }
+
+        function restartGame() {
+            document.getElementById('board-screen').classList.add('hidden');
+            document.getElementById('end-screen').classList.add('hidden');
+            document.getElementById('setup-screen').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
